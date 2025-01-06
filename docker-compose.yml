@@ -1,0 +1,19 @@
+name: shortning
+services:
+  db:
+    image: postgres
+    restart: unless-stopped
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    volumes:
+      - psql_shortning:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+
+volumes:
+  psql_shortning:
