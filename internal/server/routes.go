@@ -5,8 +5,8 @@ import "net/http"
 func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", HelloWorld)
-	mux.HandleFunc("POST /api/new", s.NewShortUrl)
+	mux.HandleFunc("POST /api/v1/shorten", s.NewShortUrl)
+	mux.HandleFunc("GET /api/v1/shorten", s.GetShortUrl)
 
 	return mux
 }
