@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const getUrl = `-- name: GetUrl :one
+SELECT id, created_at, updated_at, url FROM urls WHERE id = $1
+`
+
+func (q *Queries) GetUrl(ctx context.Context, id int32) (Url, error) {
+	row := q.db.QueryRow(ctx, getUrl, id)
+	var i Url
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Url,
+	)
+	return i, err
+}
+
 const newUrl = `-- name: NewUrl :one
 INSERT INTO urls (created_at, updated_at, url)
 VALUES (
