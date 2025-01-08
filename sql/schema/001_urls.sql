@@ -4,7 +4,7 @@ CREATE TABLE urls (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     url TEXT NOT NULL,
-    clicks INTEGER
+    clicks INTEGER NOT NULL DEFAULT 0
 );
 
 -- +goose Down
