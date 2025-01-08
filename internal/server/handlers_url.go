@@ -2,9 +2,11 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/w0/shortning/internal/base62"
 )
@@ -83,7 +85,9 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, req *http.Request) {
 	}
 
 	resp := map[string]string{
-		"url": dbUrl.Url,
+		"url":       dbUrl.Url,
+		"clicks":    fmt.Sprint(dbUrl.Clicks),
+		"lastClick": dbUrl.UpdatedAt.Time.Format(time.RFC3339),
 	}
 
 	jsonResp, err := json.Marshal(resp)
@@ -97,4 +101,25 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResp)
 
+}
+
+func (s *Server) Redirect(w http.ResponseWriter, req *http.Request) {
+	id := req.PathValue("id")
+
+	decodedId := base62.Decode(id)
+
+	dbUrl, err := s.db.GetUrl(req.Context(), int32(decodedId))
+
+	if err != nil {
+		http.Error(w, "id doesn't exist", http.StatusNotFound)
+		return
+	}
+
+	err = s.db.AddClick(req.Context(), dbUrl.ID)
+
+	if err != nil {
+		log.Printf("failed to add click: %v", err)
+	}
+
+	http.Redirect(w, req, dbUrl.Url, http.StatusSeeOther)
 }
