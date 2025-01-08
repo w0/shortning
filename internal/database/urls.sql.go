@@ -9,8 +9,19 @@ import (
 	"context"
 )
 
+const addClick = `-- name: AddClick :exec
+UPDATE urls
+SET clicks = clicks + 1, updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) AddClick(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, addClick, id)
+	return err
+}
+
 const getUrl = `-- name: GetUrl :one
-SELECT id, created_at, updated_at, url FROM urls WHERE id = $1
+SELECT id, created_at, updated_at, url, clicks FROM urls WHERE id = $1
 `
 
 func (q *Queries) GetUrl(ctx context.Context, id int32) (Url, error) {
@@ -21,6 +32,7 @@ func (q *Queries) GetUrl(ctx context.Context, id int32) (Url, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Url,
+		&i.Clicks,
 	)
 	return i, err
 }
@@ -32,7 +44,7 @@ VALUES (
     NOW(),
     $1
 )
-RETURNING id, created_at, updated_at, url
+RETURNING id, created_at, updated_at, url, clicks
 `
 
 func (q *Queries) NewUrl(ctx context.Context, url string) (Url, error) {
@@ -43,6 +55,7 @@ func (q *Queries) NewUrl(ctx context.Context, url string) (Url, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Url,
+		&i.Clicks,
 	)
 	return i, err
 }

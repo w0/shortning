@@ -13,4 +13,5 @@ type Url struct {
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 	Url       string
+	Clicks    pgtype.Int4
 }
