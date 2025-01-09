@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -39,4 +40,35 @@ func NewServer() *http.Server {
 	}
 
 	return server
+}
+
+func respondWithError(w http.ResponseWriter, status int, msg string, err error) {
+	if err != nil {
+		log.Println(msg)
+	}
+
+	type errRes struct {
+		Error string `json:"error"`
+	}
+
+	e := errRes{
+		Error: fmt.Sprintf("%s: %v", msg, err),
+	}
+
+	respondWithJson(w, status, e)
+}
+
+func respondWithJson(w http.ResponseWriter, status int, res interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	json, err := json.Marshal(res)
+
+	if err != nil {
+		log.Printf("respondWithJson: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(json)
 }

@@ -28,31 +28,21 @@ func (s *Server) NewShortUrl(w http.ResponseWriter, req *http.Request) {
 	err := d.Decode(&u)
 
 	if err != nil {
-		log.Printf("NewShortURL: bad decode %v", err)
+		respondWithError(w, http.StatusBadRequest, "json decode error", err)
 		return
 	}
 
-	log.Print(u.Url)
 	dbUrl, err := s.db.NewUrl(req.Context(), u.Url)
 
 	if err != nil {
-		log.Printf("NewShortUrl: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "failed to create short url", err)
 	}
 
 	res := resUrl{
 		Route: base62.Encode(int(dbUrl.ID)),
 	}
 
-	resJson, err := json.Marshal(&res)
-
-	if err != nil {
-		http.Error(w, "Failed to marshal response.", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(resJson)
-
+	respondWithJson(w, http.StatusCreated, res)
 }
 
 func (s *Server) GetShortUrl(w http.ResponseWriter, req *http.Request) {
@@ -66,14 +56,14 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&data)
 
 	if err != nil {
-		http.Error(w, "failed to decode request", http.StatusInternalServerError)
+		respondWithError(w, http.StatusBadRequest, "json decode error", err)
 		return
 	}
 
 	url, err := url.Parse(data.Url)
 
 	if err != nil {
-		http.Error(w, "failed to parse url", http.StatusInternalServerError)
+		respondWithError(w, http.StatusBadRequest, "url invalid", err)
 		return
 	}
 
@@ -82,27 +72,17 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, req *http.Request) {
 	dbUrl, err := s.db.GetUrl(req.Context(), int32(id))
 
 	if err != nil {
-		http.Error(w, "db error", http.StatusInternalServerError)
+		respondWithError(w, http.StatusNotFound, "entry not found", err)
 		return
 	}
 
-	resp := map[string]string{
+	res := map[string]string{
 		"url":       dbUrl.Url,
 		"clicks":    fmt.Sprint(dbUrl.Clicks),
 		"lastClick": dbUrl.UpdatedAt.Time.Format(time.RFC3339),
 	}
 
-	jsonResp, err := json.Marshal(resp)
-
-	if err != nil {
-		http.Error(w, "failed to marshal json", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResp)
-
+	respondWithJson(w, http.StatusOK, res)
 }
 
 func (s *Server) Redirect(w http.ResponseWriter, req *http.Request) {
