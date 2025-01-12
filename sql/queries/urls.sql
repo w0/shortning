@@ -15,3 +15,12 @@ UPDATE urls
 SET clicks = clicks + 1,
     updated_at = NOW()
 WHERE id = $1;
+
+
+-- name: GetUrlsCreatedBefore :many
+SELECT id FROM urls
+WHERE created_at < now() - MAKE_INTERVAL(DAYS => $1);
+
+-- name: GetUrlsUnderClickCount :many
+SELECT * FROM urls
+WHERE clicks <= $1;
