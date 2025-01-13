@@ -35,10 +35,6 @@ func NewServer() *http.Server {
 		log.Printf("[WARNING] %v", err)
 	}
 
-	if err != nil {
-		log.Printf("[WARNING] %v", err)
-	}
-
 	NewServer := &Server{
 		port:      port,
 		db:        database.New(conn),
