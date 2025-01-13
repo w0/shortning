@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -15,8 +16,9 @@ import (
 )
 
 type Server struct {
-	port string
-	db   *database.Queries
+	port      string
+	db        *database.Queries
+	pruneDays int32
 }
 
 func NewServer() *http.Server {
@@ -27,9 +29,20 @@ func NewServer() *http.Server {
 		log.Fatal("Failed to open db connection")
 	}
 
+	pruneDays, err := strconv.Atoi(os.Getenv("PRUNE_DAYS"))
+
+	if err != nil {
+		log.Printf("[WARNING] %v", err)
+	}
+
+	if err != nil {
+		log.Printf("[WARNING] %v", err)
+	}
+
 	NewServer := &Server{
-		port: port,
-		db:   database.New(conn),
+		port:      port,
+		db:        database.New(conn),
+		pruneDays: int32(pruneDays),
 	}
 
 	server := &http.Server{
@@ -38,6 +51,8 @@ func NewServer() *http.Server {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
+
+	go dbBackgroundTasks(*NewServer, 24*time.Second)
 
 	return server
 }
@@ -71,4 +86,19 @@ func respondWithJson(w http.ResponseWriter, status int, res interface{}) {
 	}
 
 	w.Write(json)
+}
+
+func dbBackgroundTasks(s Server, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			s.PruneOldLinks(s.pruneDays)
+		}
+	}
 }

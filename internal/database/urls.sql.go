@@ -12,7 +12,7 @@ import (
 const addClick = `-- name: AddClick :exec
 UPDATE urls
 SET clicks = clicks + 1,
-    updated_at = now()
+    updated_at = NOW()
 WHERE id = $1
 `
 
@@ -36,6 +36,63 @@ func (q *Queries) GetUrl(ctx context.Context, id int32) (Url, error) {
 		&i.Clicks,
 	)
 	return i, err
+}
+
+const getUrlsCreatedBefore = `-- name: GetUrlsCreatedBefore :many
+SELECT id FROM urls
+WHERE
+    created_at < now() - MAKE_INTERVAL(DAYS => $1)
+`
+
+func (q *Queries) GetUrlsCreatedBefore(ctx context.Context, days int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getUrlsCreatedBefore, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUrlsUnderClickCount = `-- name: GetUrlsUnderClickCount :many
+SELECT id, created_at, updated_at, url, clicks FROM urls
+WHERE clicks <= $1
+`
+
+func (q *Queries) GetUrlsUnderClickCount(ctx context.Context, clicks int32) ([]Url, error) {
+	rows, err := q.db.Query(ctx, getUrlsUnderClickCount, clicks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Url
+	for rows.Next() {
+		var i Url
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Url,
+			&i.Clicks,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const newUrl = `-- name: NewUrl :one
