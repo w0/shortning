@@ -24,3 +24,7 @@ WHERE created_at < now() - MAKE_INTERVAL(DAYS => $1);
 -- name: GetUrlsUnderClickCount :many
 SELECT * FROM urls
 WHERE clicks <= $1;
+
+-- name: DeleteUrl :exec
+DELETE FROM urls
+WHERE id = $1;

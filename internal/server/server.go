@@ -94,7 +94,7 @@ func dbBackgroundTasks(s Server, interval time.Duration) {
 		case <-done:
 			return
 		case <-ticker.C:
-			s.PruneOldLinks(s.pruneDays)
+			s.PruneByDays(s.pruneDays)
 		}
 	}
 }

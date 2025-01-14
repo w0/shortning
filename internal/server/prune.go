@@ -5,15 +5,15 @@ import (
 	"log"
 )
 
-func (s *Server) PruneOldLinks(days int32) {
+func (s *Server) PruneByDays(days int32) {
 
 	dbUrls, err := s.db.GetUrlsCreatedBefore(context.Background(), int32(days))
 
 	if err != nil {
-		log.Printf("PruneOldLinks: %v", err)
+		log.Printf("error get urls created before %d: %v", days, err)
 	}
 
-	for i := range dbUrls {
-		log.Printf("ID: %d", i)
+	for url := range dbUrls {
+		s.db.DeleteUrl(context.Background(), int32(url))
 	}
 }

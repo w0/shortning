@@ -21,6 +21,16 @@ func (q *Queries) AddClick(ctx context.Context, id int32) error {
 	return err
 }
 
+const deleteUrl = `-- name: DeleteUrl :exec
+DELETE FROM urls
+WHERE id = $1
+`
+
+func (q *Queries) DeleteUrl(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteUrl, id)
+	return err
+}
+
 const getUrl = `-- name: GetUrl :one
 SELECT id, created_at, updated_at, url, clicks FROM urls WHERE id = $1
 `
@@ -40,8 +50,7 @@ func (q *Queries) GetUrl(ctx context.Context, id int32) (Url, error) {
 
 const getUrlsCreatedBefore = `-- name: GetUrlsCreatedBefore :many
 SELECT id FROM urls
-WHERE
-    created_at < now() - MAKE_INTERVAL(DAYS => $1)
+WHERE created_at < now() - MAKE_INTERVAL(DAYS => $1)
 `
 
 func (q *Queries) GetUrlsCreatedBefore(ctx context.Context, days int32) ([]int32, error) {
