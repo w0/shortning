@@ -23,7 +23,8 @@ WHERE created_at < now() - MAKE_INTERVAL(DAYS => $1);
 
 -- name: GetUrlsUnderClickCount :many
 SELECT * FROM urls
-WHERE clicks <= $1;
+WHERE clicks <= $1 and
+    created_at < now() - MAKE_INTERVAL(DAYS => $2);
 
 -- name: DeleteUrl :exec
 DELETE FROM urls

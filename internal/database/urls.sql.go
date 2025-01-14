@@ -75,11 +75,17 @@ func (q *Queries) GetUrlsCreatedBefore(ctx context.Context, days int32) ([]int32
 
 const getUrlsUnderClickCount = `-- name: GetUrlsUnderClickCount :many
 SELECT id, created_at, updated_at, url, clicks FROM urls
-WHERE clicks <= $1
+WHERE clicks <= $1 and
+    created_at < now() - MAKE_INTERVAL(DAYS => $2)
 `
 
-func (q *Queries) GetUrlsUnderClickCount(ctx context.Context, clicks int32) ([]Url, error) {
-	rows, err := q.db.Query(ctx, getUrlsUnderClickCount, clicks)
+type GetUrlsUnderClickCountParams struct {
+	Clicks int32
+	Days   int32
+}
+
+func (q *Queries) GetUrlsUnderClickCount(ctx context.Context, arg GetUrlsUnderClickCountParams) ([]Url, error) {
+	rows, err := q.db.Query(ctx, getUrlsUnderClickCount, arg.Clicks, arg.Days)
 	if err != nil {
 		return nil, err
 	}
